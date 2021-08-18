@@ -77,17 +77,15 @@ function getSelectedCitationsAsJson(items) {
     for (var i = 0; i < items.length; i++) {
         if (items[i].linkMode) continue;
 
-		// zotero has different fields depending on itemType
-        let pub = (items[i].publicationTitle ? items[i].publicationTitle : "") ||
-            (items[i].blogTitle ? items[i].blogTitle : "") ||
-            (items[i].websiteTitle ? items[i].websiteTitle : "");
-
         out.push({
             author: mergeAuthors(items[i].creators),
             title: items[i].title,
             url: items[i].url,
-            year: pub + ((pub && items[i].date) ? ", " : "") +
-                (items[i].date ? items[i].date.split("-")[0] : "")
+			// zotero has different fields depending on itemType
+            publication: (items[i].publicationTitle ? items[i].publicationTitle : "") ||
+	            (items[i].blogTitle ? items[i].blogTitle : "") ||
+	            (items[i].websiteTitle ? items[i].websiteTitle : ""),
+	       	year: (items[i].date ? items[i].date.split("-")[0] : "")
         });
     }
     return out;

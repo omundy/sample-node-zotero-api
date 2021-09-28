@@ -35,13 +35,22 @@ async function getJsonFromFile(path) {
     // const allItems = await myapi.items().get();
     // console.log(allItems);
 
+
+    // RUN
+
     // get all items in a collection
-    const myapi = await api(myCredentials.key).library('user', myCredentials.user).collections(myCollections.randomness).items().get();
+    const myapi = await api(myCredentials.key, {
+            limit: 50
+        })
+        .library('user', myCredentials.user)
+        .collections(myCollections.randomness)
+        .items().get();
     const items = myapi.getData();
-    // console.log(items);
+
+
+    // console.log(items.length, items);
     // console.log(items.map(i => i.title));
     console.log(getSelectedCitationsAsJson(items));
-
 
 
 })().catch(err => {
@@ -50,42 +59,56 @@ async function getJsonFromFile(path) {
 
 
 
-
-function mergeAuthors(items) {
+/**
+ *  Combine all creators into a single string
+ */
+function mergeCreators(creators) {
     var out = [];
-    for (var i = 0; i < items.length; i++) {
-        if (items[i].director) {
+    if (!creators) return;
+    console.log(creators);
+    for (var i = 0; i < creators.length; i++) {
+        if (creators[i].director) {
             out.push(
-                (items[i].director ? items[i].lastName : "") +
-                ((items[i].lastName && items[i].firstName) ? ", " : "") +
-                (items[i].firstName ? items[i].firstName : "")
+                (creators[i].director ? creators[i].lastName : "") +
+                ((creators[i].lastName && creators[i].firstName) ? ", " : "") +
+                (creators[i].firstName ? creators[i].firstName : "")
             );
-        } else if (items[i].lastName) {
+        } else if (creators[i].lastName) {
             out.push(
-                (items[i].lastName ? items[i].lastName : "") +
-                ((items[i].lastName && items[i].firstName) ? ", " : "") +
-                (items[i].firstName ? items[i].firstName : "")
+                (creators[i].lastName ? creators[i].lastName : "") +
+                ((creators[i].lastName && creators[i].firstName) ? ", " : "") +
+                (creators[i].firstName ? creators[i].firstName : "")
             );
         }
-
     }
     return out.join(", ");
 }
 
+/**
+ *  Combine all creators into a single string
+ */
 function getSelectedCitationsAsJson(items) {
     var out = [];
+    if (!items || items.length == 0) return;
     for (var i = 0; i < items.length; i++) {
+        // if an imported_url || imported_file
         if (items[i].linkMode) continue;
+        // if one of my notes
+        if (items[i].itemType == "note") continue;
+        // if no data
+        if (!items[i].title) continue;
+
+        console.log(i, items[i].title);
 
         out.push({
-            author: mergeAuthors(items[i].creators),
+            author: mergeCreators(items[i].creators) || "",
             title: items[i].title,
             url: items[i].url,
-			// zotero has different fields depending on itemType
+            // zotero has different fields depending on itemType
             publication: (items[i].publicationTitle ? items[i].publicationTitle : "") ||
-	            (items[i].blogTitle ? items[i].blogTitle : "") ||
-	            (items[i].websiteTitle ? items[i].websiteTitle : ""),
-	       	year: (items[i].date ? items[i].date.split("-")[0] : "")
+                (items[i].blogTitle ? items[i].blogTitle : "") ||
+                (items[i].websiteTitle ? items[i].websiteTitle : ""),
+            year: (items[i].date ? items[i].date.split("-")[0] : "")
         });
     }
     return out;
